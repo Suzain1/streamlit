@@ -2,58 +2,73 @@ import streamlit as st
 import json
 import os
 
-# Define the absolute path for the JSON file
-FILE_PATH = os.path.join(os.getcwd(), "users.json")
+# File path for storing user data
+USER_FILE = "users.json"
 
-# Ensure the JSON file exists
-if not os.path.exists(FILE_PATH):
-    with open(FILE_PATH, "w") as f:
-        json.dump({"users": []}, f)
-
-# Function to load users from JSON file
+# Load users from JSON file
 def load_users():
     try:
-        with open(FILE_PATH, "r") as file:
-            return json.load(file)
-    except json.JSONDecodeError:
-        return {"users": []}  # Handle broken JSON files
+        with open(USER_FILE, "r") as file:
+            return json.load(file)["users"]
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
 
-# Function to save users to JSON file
+# Save users to JSON file
 def save_users(users):
-    with open(FILE_PATH, "w") as file:
-        json.dump(users, file, indent=4)
+    with open(USER_FILE, "w") as file:
+        json.dump({"users": users}, file, indent=4)
+    push_to_github()  # Push updates to GitHub
 
-# Function to check if a user exists
+# Check if user exists
 def user_exists(username):
-    return any(user["username"] == username for user in load_users()["users"])
+    users = load_users()
+    return any(user["username"] == username for user in users)
 
-# Function to add a new user
-def add_user(username, password):
-    data = load_users()
-    if user_exists(username):
-        return False  # User already exists
-    data["users"].append({"username": username, "password": password})
-    save_users(data)
-    return True  # Successfully added
+# Authenticate user login
+def authenticate(username, password):
+    users = load_users()
+    return any(user["username"] == username and user["password"] == password for user in users)
+
+# Push updates to GitHub
+def push_to_github():
+    os.system("git add users.json")
+    os.system('git commit -m "Update users.json with new signup data"')
+    os.system("git push origin main")  # Change 'main' if using a different branch
 
 # Streamlit UI
-st.title("User Signup")
+st.title("User Authentication System")
 
-new_username = st.text_input("Username")
-new_password = st.text_input("Password", type="password")
+# Tabs for Login and Signup
+tab1, tab2 = st.tabs(["Login", "Sign Up"])
 
-if st.button("Sign Up"):
-    if user_exists(new_username):
-        st.error("Username already exists. Please choose another one.")
-    else:
-        if add_user(new_username, new_password):
-            st.success("Signup successful! You can now log in.")
-            st.write("Debug: User data saved to", FILE_PATH)
+with tab1:
+    st.subheader("Login")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if authenticate(username, password):
+            st.success("Login successful!")
         else:
-            st.error("Error saving user. Try again.")
+            st.error("Invalid username or password")
 
-# Debug: Show current users
+with tab2:
+    st.subheader("Sign Up")
+    new_username = st.text_input("New Username")
+    new_password = st.text_input("New Password", type="password")
+
+    if st.button("Sign Up"):
+        if user_exists(new_username):
+            st.error("Username already exists. Choose another.")
+        else:
+            users = load_users()
+            users.append({"username": new_username, "password": new_password})
+            save_users(users)
+            st.success("Signup successful! You can now log in.")
+
+# Debugging - Show current users
 if st.button("Show Users (Debug)"):
-    st.json(load_users())
+    st.json({"users": load_users()})
+
 
 
