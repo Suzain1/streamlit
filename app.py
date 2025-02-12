@@ -2,13 +2,16 @@ import streamlit as st
 import json
 import os
 
-# Define the path for the JSON file
-FILE_PATH = "users.json"
+# Define the absolute path for the JSON file
+FILE_PATH = os.path.join(os.getcwd(), "users.json")
+
+# Ensure the JSON file exists
+if not os.path.exists(FILE_PATH):
+    with open(FILE_PATH, "w") as f:
+        json.dump({"users": []}, f)
 
 # Function to load users from JSON file
 def load_users():
-    if not os.path.exists(FILE_PATH):
-        return {"users": []}  # Return empty structure if file doesn't exist
     try:
         with open(FILE_PATH, "r") as file:
             return json.load(file)
@@ -43,6 +46,14 @@ if st.button("Sign Up"):
     if user_exists(new_username):
         st.error("Username already exists. Please choose another one.")
     else:
-        add_user(new_username, new_password)
-        st.success("Signup successful! You can now log in.")
+        if add_user(new_username, new_password):
+            st.success("Signup successful! You can now log in.")
+            st.write("Debug: User data saved to", FILE_PATH)
+        else:
+            st.error("Error saving user. Try again.")
+
+# Debug: Show current users
+if st.button("Show Users (Debug)"):
+    st.json(load_users())
+
 
