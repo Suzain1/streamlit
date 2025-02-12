@@ -31,9 +31,13 @@ def authenticate(username, password):
 
 # Push updates to GitHub
 def push_to_github():
+def push_to_github():
+    os.system("git config --global user.email 'suzain1894@gmail.com'")
+    os.system("git config --global user.name 'Suzain1'")
     os.system("git add users.json")
     os.system('git commit -m "Update users.json with new signup data"')
-    os.system("git push origin main")  # Change 'main' if using a different branch
+    os.system("git push https://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@github.com/Suzain1/streamlit.git main")  
+
 
 # Streamlit UI
 st.title("User Authentication System")
